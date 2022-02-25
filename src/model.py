@@ -61,3 +61,18 @@ class RealTimeData(BaseModel):
     timestamp: int 
     services: list[Service]
 
+class StopSequence(BaseModel):
+    arrival: int
+    departure: int 
+    sequence_id: int 
+
+
+class TripUpdate(BaseModel):
+    trip_id: str 
+    start_time: str 
+    start_date: str 
+    stopping_pattern: list[StopSequence]
+
+class TripUpdates(BaseModel):
+    timestamp: str 
+    trips: list[TripUpdate]

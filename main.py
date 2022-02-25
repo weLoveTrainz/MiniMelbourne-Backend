@@ -5,17 +5,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.tasks import repeat_every
 import pandas as pd
+from os import environ
 from dotenv import load_dotenv
 from src.model import *
 from src.gtfs_pb2 import FeedMessage
 
 
 # define API urls
-BASE = 'https://data-exchange-api.vicroads.vic.gov.au'
-GTFS_R = '/opendata/v1/gtfsr/metrotrain-tripupdates'
-
+GTFS_R = 'https://data-exchange-api.vicroads.vic.gov.au/opendata/v1/gtfsr/metrotrain-vehicleposition-updates'
+GTFS_T = 'https://data-exchange-api.vicroads.vic.gov.au/opendata/v1/gtfsr/metrotrain-tripupdates'
 # Get live data -> digest -> serve -> get live data ....
-live_data = FeedMessage()
+location_data = FeedMessage()
+update_data = FeedMessage()
 
 # Define app
 app = FastAPI()
@@ -67,13 +68,26 @@ async def get_realtime() -> RealTimeData:
     Returns realtime GTFS data. Updated every 20 seconds.
 
     '''
-    return {'timestamp': live_data.header.timestamp,
+    return {'timestamp': location_data.header.timestamp,
             'services': [{'service_id': f.id, "trip_id": f.vehicle.trip.trip_id,
                           "start_time": f.vehicle.trip.start_time, "start_date": f.vehicle.trip.start_date,
                          "latitude": f.vehicle.position.latitude, "longitude": f.vehicle.position.longitude,
                           "timestamp": f.vehicle.timestamp, "vehicle_id": f.vehicle.vehicle.id,
                           "occupancy": f.vehicle.occupancy_status if hasattr(f.vehicle, "occupancy_status") else None
-                          } for f in live_data.entity]}
+                          } for f in location_data.entity]}
+
+
+@app.get("/trip_update", response_model=TripUpdates)
+async def get_trip_update() -> TripUpdates:
+
+    return {
+        'timestamp': update_data.header.timestamp,
+        'trips': [
+            {'trip_id': curr.trip_update.trip.trip_id, 'start_time': curr.trip_update.trip.start_time, 'start_date': curr.trip_update.trip.start_date,
+             'stopping_pattern': [{"arrival": stop_seq.arrival.time, "departure": stop_seq.departure.time, "sequence_id": stop_seq.stop_sequence} for stop_seq in curr.trip_update.stop_time_update]}
+            for curr in update_data.entity
+        ]
+    }
 
 
 @repeat_every(seconds=20)
@@ -84,8 +98,10 @@ async def update_realtime() -> None:
     '''
 
     async with aiohttp.ClientSession() as session:
-        async with session.get(url+gtfs, headers={'Ocp-Apim-Subscription-Key': environ['PrimaryKey']}) as response:
-            live_data.ParseFromString(await response.read())
+        async with session.get(GTFS_R, headers={'Ocp-Apim-Subscription-Key': environ['PrimaryKey']}) as response:
+            location_data.ParseFromString(await response.read())
+        async with session.get(GTFS_T, headers={'Ocp-Apim-Subscription-Key': environ['PrimaryKey']}) as response:
+            update_data.ParseFromString(await response.read())
 
 
 @app.on_event('startup')
