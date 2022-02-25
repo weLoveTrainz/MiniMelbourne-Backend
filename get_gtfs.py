@@ -46,7 +46,7 @@ with open('data/stop_times.pkl', 'wb') as pk:
 shapes = pd.read_csv(
     'data/shapes.txt').drop(['shape_pt_sequence', 'shape_dist_traveled'], axis=1)
 
-# For each unique shape, group together into a sequence of points (foorms a line)
+# For each unique shape, group together into a sequence of points (forms a line)
 with open('data/shapes.pkl', 'wb') as pkl:
     pickle.dump(reduce(lambda x, y: x | y,
                        [{service: data.drop(['shape_id'], axis=1).to_dict('records')} for service, data in shapes.groupby('shape_id')]), pkl)
