@@ -79,7 +79,7 @@ class StopSequence(BaseModel):
 
 class TripUpdate(BaseModel):
     trip_id: str
-    start_time: str 
+    start_time: str
     start_date: str
     stopping_pattern: list[StopSequence]
 
@@ -90,3 +90,8 @@ class TripUpdates(BaseModel):
 class CurrentStop(BaseModel):
     completed: bool
     stop: Stop
+
+class NextStop(BaseModel):
+    # None if the route is completed so no next stop
+    stop: Stop | None
+    arrival: str | None
