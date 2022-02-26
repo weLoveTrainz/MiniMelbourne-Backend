@@ -14,7 +14,7 @@ class Stops(BaseModel):
 class TripShape(BaseModel):
 
     shape_file: list[list[float]] # line file, list of long lats (!! note the ordering)
-    stations: list[str]
+    stations: list[str] 
 
 
 class TripStop(BaseModel):
@@ -24,6 +24,16 @@ class TripStop(BaseModel):
 class TripInfo(BaseModel):
     trip_id: str 
     Trips: list[TripStop] = Field(...,description="List of stations along with their arrival time")
+
+
+class TripStopDict(BaseModel):
+    arrival_time: str 
+    stop_id: str 
+    stop_sequence: int 
+
+class TripInfoDict(BaseModel):
+    trip_id: str 
+    Trips: dict[int,TripStopDict]
 
 class Occupancy(int, Enum):
     ''' 

@@ -7,8 +7,8 @@ import os.path
 from zipfile import ZipFile
 from functools import reduce
 import shutil
-import pandas as pd 
-import pickle 
+import pandas as pd
+import pickle
 
 # Get if it doesn't exist
 if not os.path.isfile('gtfs.zip'):
@@ -33,13 +33,18 @@ shutil.rmtree('2')
 # Generate stopping sequences (times), drop most details
 stop_times = pd.read_csv("data/stop_times.txt", parse_dates=["arrival_time", "departure_time"]).drop(
     ['stop_headsign', 'pickup_type',
-        'drop_off_type', 'stop_sequence',
+        'drop_off_type',
         'departure_time', 'shape_dist_traveled'], axis=1)
 
-# Serialize by grouping on trip_id, then generate a dictionary indexed trip_id
+# Serialize by grouping on trip_id, then generate a dictionary indexed trip_id, refactor
 with open('data/stop_times.pkl', 'wb') as pk:
     pickle.dump(reduce(lambda x, y: x | y,
-                       [{service: data.drop(['trip_id'], axis=1).to_dict('records')} for service, data in stop_times.groupby('trip_id')]), pk)
+                       [{service: data.drop(['trip_id', 'stop_sequence'], axis=1).to_dict('records')} for service, data in stop_times.groupby('trip_id')]), pk)
+
+# Do it again but have random access compatable as opposed to sequence
+with open('data/stop_times_rand.pkl', 'wb') as pk:
+    pickle.dump(reduce(lambda x, y: x | y, [{service: {seq["stop_sequence"]: seq for seq in data.drop(
+        ['trip_id'], axis=1).to_dict('records')}} for service, data in stop_times.groupby('trip_id')]), pk)
 
 
 # Generate dictionary indexed by shape_id

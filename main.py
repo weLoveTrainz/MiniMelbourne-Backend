@@ -14,7 +14,7 @@ from src.gtfs_pb2 import FeedMessage
 # define API urls
 GTFS_R = 'https://data-exchange-api.vicroads.vic.gov.au/opendata/v1/gtfsr/metrotrain-vehicleposition-updates'
 GTFS_T = 'https://data-exchange-api.vicroads.vic.gov.au/opendata/v1/gtfsr/metrotrain-tripupdates'
-# Get live data -> digest -> serve -> get live data ....
+# Get live data -> digest -> serve -> get live data ....    
 location_data = FeedMessage()
 update_data = FeedMessage()
 
@@ -24,6 +24,7 @@ app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
 load_dotenv()
+print(environ["PrimaryKey"])
 # This file contains the stations
 with open('data/stops.txt', 'r') as file:
     stop_data = {r[0]: {'stop_id': r[0], 'stop_name': r[1], 'stop_lat': r[2], 'stop_lon': r[3]}
@@ -32,6 +33,9 @@ with open('data/stops.txt', 'r') as file:
 # Contains the trip id along with the station ids and the times it stops at them
 with open('data/stop_times.pkl', 'rb') as file:
     trip_stop_data = pickle.load(file)
+
+with open('data/stop_times_rand.pkl', 'rb') as file:
+    trip_stop_dict_data = pickle.load(file)
 
 # Contains the line data for each route
 with open('data/shapes.pkl', 'rb') as file:
@@ -58,9 +62,12 @@ async def get_shape(trip_id: str) -> TripShape:
 
 
 @app.get('/stops/stop_times/{trip_id}', tags=['Stop'], response_model=TripInfo)
-async def get_trip_info_data(trip_id: str) -> TripInfo:
+async def get_trip_info_data(trip_id: str) -> TripInfo: # Need to modify structur of th
     return {'trip_id': trip_id, 'Trips': trip_stop_data[trip_id]}
 
+@app.get('/stops/stop_times_dict/{trip_id}', tags=['Stop'], response_model=TripInfoDict)
+async def get_trip_info_dict_data(trip_id: str) -> TripInfoDict:
+    return {'trip_id': trip_id, 'Trips': trip_stop_dict_data[trip_id]}
 
 @app.get("/realtime", response_model=RealTimeData)
 async def get_realtime() -> RealTimeData:
