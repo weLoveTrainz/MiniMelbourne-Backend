@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from src.model import *
 from src.gtfs_pb2 import FeedMessage
 from datetime import datetime
+import random
 
 
 # define API urls
@@ -37,7 +38,6 @@ with open('data/stop_times.pkl', 'rb') as file:
 # Contains the line data for each route
 with open('data/shapes.pkl', 'rb') as file:
     shape_data = pickle.load(file)
-
 
 # Endpoints defined below
 
@@ -105,6 +105,8 @@ async def get_current_stop(trip_id: str) -> CurrentStop:
         i += 1
         current_stop = stops[i]
 
+    current_stop = stops[max(i - 1, 0)]
+
     stop_id = str(current_stop['stop_id'])
 
     return {
@@ -116,6 +118,42 @@ async def get_current_stop(trip_id: str) -> CurrentStop:
         }
     }
 
+@app.get("/next_station/{trip_id}", response_model=NextStop)
+async def get_current_stop(trip_id: str) -> NextStop:
+    trip_info = await get_trip_info_data(trip_id)
+    stops = trip_info["Trips"]
+
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+
+    # We want the next station the train will be at
+    i = 0
+    current_stop = stops[i]
+    while (current_time > current_stop['arrival_time']) and (i < len(stops) - 1):
+        i += 1
+        current_stop = stops[i]
+
+    if (i == len(stops) - 1):
+        # The route is completed so we return None
+        return {
+            'stop': None,
+            'arrival': None
+        }
+
+    stop_id = str(current_stop['stop_id'])
+
+    return {
+        'stop': {
+            'name': stop_data[stop_id]['stop_name'],
+            'station_id': stop_id,
+            'coords': [stop_data[stop_id]['stop_lat'], stop_data[stop_id]['stop_lon']]
+        },
+        'arrival': current_stop['arrival_time']
+    }
+
+@app.get("/occupancy/{trip_id}", response_model=Occupancy)
+async def get_current_stop(trip_id: str) -> Occupancy:
+    return random.randint(0,6)
 
 @repeat_every(seconds=20)
 async def update_realtime() -> None:
