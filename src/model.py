@@ -25,6 +25,16 @@ class TripInfo(BaseModel):
     trip_id: str
     Trips: list[TripStop] = Field(...,description="List of stations along with their arrival time")
 
+
+class TripStopDict(BaseModel):
+    arrival_time: str
+    stop_id: str
+    stop_sequence: int
+
+class TripInfoDict(BaseModel):
+    trip_id: str
+    Trips: dict[int,TripStopDict]
+
 class Occupancy(int, Enum):
     '''
     If available, displays how crowded the train is.
@@ -85,3 +95,6 @@ class NextStop(BaseModel):
     # None if the route is completed so no next stop
     stop: Stop | None
     arrival: str | None
+
+class CarParkOccupancy(int):
+    occupancy: int
