@@ -11,29 +11,35 @@ class Stop(BaseModel):
 class Stops(BaseModel):
     stop_list: list[Stop]
 
+
 class TripShape(BaseModel):
 
-    shape_file: list[list[float]] # line file, list of long lats (!! note the ordering)
-    stations: list[str] 
+    # line file, list of long lats (!! note the ordering)
+    shape_file: list[list[float]]
+    stations: list[str]
 
 
 class TripStop(BaseModel):
     arrival_time: str
     stop_id: str
 
+
 class TripInfo(BaseModel):
     trip_id: str
-    Trips: list[TripStop] = Field(...,description="List of stations along with their arrival time")
+    Trips: list[TripStop] = Field(
+        ..., description="List of stations along with their arrival time")
 
 
 class TripStopDict(BaseModel):
-    arrival_time: str 
-    stop_id: str 
-    stop_sequence: int 
+    arrival_time: str
+    stop_id: str
+    stop_sequence: int
+
 
 class TripInfoDict(BaseModel):
-    trip_id: str 
-    Trips: dict[int,TripStopDict]
+    trip_id: str
+    Trips: dict[int, TripStopDict]
+
 
 class Occupancy(int, Enum):
     '''
@@ -46,6 +52,7 @@ class Occupancy(int, Enum):
     CRUSHED_STANDING_ROOM_ONLY = 4
     FULL = 5
     NOT_ACCEPTING_PASSENGERS = 6
+
 
 class Service(BaseModel):
     '''
@@ -63,6 +70,7 @@ class Service(BaseModel):
     vehicle_id: str
     occupancy: Occupancy | None
 
+
 class RealTimeData(BaseModel):
     '''
     List of all realtime trains with locations.
@@ -70,6 +78,18 @@ class RealTimeData(BaseModel):
     '''
     timestamp: int
     services: list[Service]
+
+
+class EstService(BaseModel):
+    trip_id: str
+    start_time: str
+    coords: list[float]
+
+
+class EstRealTime(BaseModel):
+    timestamp: int
+    services: list[EstService]
+
 
 class StopSequence(BaseModel):
     arrival: int
@@ -79,13 +99,15 @@ class StopSequence(BaseModel):
 
 class TripUpdate(BaseModel):
     trip_id: str
-    start_time: str 
+    start_time: str
     start_date: str
     stopping_pattern: list[StopSequence]
+
 
 class TripUpdates(BaseModel):
     timestamp: str
     trips: list[TripUpdate]
+
 
 class CurrentStop(BaseModel):
     completed: bool

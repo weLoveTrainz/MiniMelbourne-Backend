@@ -10,12 +10,13 @@ from dotenv import load_dotenv
 from src.model import *
 from src.gtfs_pb2 import FeedMessage
 from datetime import datetime
+from math import floor
 
 
 # define API urls
 GTFS_R = 'https://data-exchange-api.vicroads.vic.gov.au/opendata/v1/gtfsr/metrotrain-vehicleposition-updates'
 GTFS_T = 'https://data-exchange-api.vicroads.vic.gov.au/opendata/v1/gtfsr/metrotrain-tripupdates'
-# Get live data -> digest -> serve -> get live data ....    
+# Get live data -> digest -> serve -> get live data ....
 location_data = FeedMessage()
 update_data = FeedMessage()
 
@@ -63,19 +64,54 @@ async def get_shape(trip_id: str) -> TripShape:
 
 
 @app.get('/stops/stop_times/{trip_id}', tags=['Stop'], response_model=TripInfo)
-async def get_trip_info_data(trip_id: str) -> TripInfo: # Need to modify structur of th
+# Need to modify structur of th
+async def get_trip_info_data(trip_id: str) -> TripInfo:
     return {'trip_id': trip_id, 'Trips': trip_stop_data[trip_id]}
+
 
 @app.get('/stops/stop_times_dict/{trip_id}', tags=['Stop'], response_model=TripInfoDict)
 async def get_trip_info_dict_data(trip_id: str) -> TripInfoDict:
     return {'trip_id': trip_id, 'Trips': trip_stop_dict_data[trip_id]}
 
+
+@app.get('/est_realtime', response_model=EstRealTime)
+async def get_est_realtime() -> EstRealTime:
+    '''
+    Estimates the locations of services that are active. Gets the start date, and then finds the approximate location of the train.
+
+    '''
+    retrieve = await get_trip_update_curr()  # Get current
+    trip_data_curr = retrieve['trips']
+    now = datetime.now()
+    current_time = datetime.strptime(now.strftime("%H:%M:%S"), "%H:%M:%S")
+    # shapeNum * (curr_time-start_time)/(finish_time-start_time)
+
+    def est_pos(trip_id: str):
+        '''
+        Estimate the position at which the train is
+        '''
+        shape_id = ".".join(trip_id.split(".")[2:])
+        return min(1, floor(len(shape_data[shape_id])*(current_time -
+                                                       datetime.strptime(trip_stop_data[trip_id][0]['arrival_time'], "%H:%M:%S")).seconds/(datetime.strptime(trip_stop_data[trip_id][-1]['arrival_time'], "%H:%M:%S") -
+                                                                                                                                           datetime.strptime(trip_stop_data[trip_id][0]['arrival_time'], "%H:%M:%S")).seconds))
+
+    def get_shape_pos(trip_id):
+        # Get the estimated value
+        lat_lon = shape_data[".".join(
+            trip_id.split(".")[2:])][est_pos(trip_id)]
+        return [lat_lon['shape_pt_lon'], lat_lon['shape_pt_lat']]
+
+    return {'timestamp': datetime.now().timestamp(),
+            'services': [{'trip_id': s['trip_id'], 'start_time':s['start_time'], 'coords':get_shape_pos(s['trip_id'])} for s in trip_data_curr]}
+
+
 @app.get("/realtime", response_model=RealTimeData)
 async def get_realtime() -> RealTimeData:
     '''
     Returns realtime GTFS data. Updated every 20 seconds.
-
+    NOT WORKING
     '''
+
     return {'timestamp': location_data.header.timestamp,
             'services': [{'service_id': f.id, "trip_id": f.vehicle.trip.trip_id,
                           "start_time": f.vehicle.trip.start_time, "start_date": f.vehicle.trip.start_date,
@@ -96,6 +132,25 @@ async def get_trip_update() -> TripUpdates:
             for curr in update_data.entity
         ]
     }
+
+
+@app.get("/trip_update_current", response_model=TripUpdates)
+async def get_trip_update_curr() -> TripUpdates:
+    '''
+    Get all active services
+    '''
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+
+    return {
+        'timestamp': update_data.header.timestamp,
+        'trips': [
+            {'trip_id': curr.trip_update.trip.trip_id, 'start_time': curr.trip_update.trip.start_time, 'start_date': curr.trip_update.trip.start_date,
+             'stopping_pattern': [{"arrival": stop_seq.arrival.time, "departure": stop_seq.departure.time, "sequence_id": stop_seq.stop_sequence} for stop_seq in curr.trip_update.stop_time_update]}
+            for curr in update_data.entity if curr.trip_update.trip.start_time < current_time < trip_stop_data[curr.trip_update.trip.trip_id][-1]['arrival_time']
+        ]
+    }
+
 
 @app.get("/current_station/{trip_id}", response_model=CurrentStop)
 async def get_current_stop(trip_id: str) -> CurrentStop:
