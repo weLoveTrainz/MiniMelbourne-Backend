@@ -91,9 +91,9 @@ async def get_est_realtime() -> EstRealTime:
         Estimate the position at which the train is
         '''
         shape_id = ".".join(trip_id.split(".")[2:])
-        return min(1, floor(len(shape_data[shape_id])*(current_time -
+        return floor(len(shape_data[shape_id])*(current_time -
                                                        datetime.strptime(trip_stop_data[trip_id][0]['arrival_time'], "%H:%M:%S")).seconds/(datetime.strptime(trip_stop_data[trip_id][-1]['arrival_time'], "%H:%M:%S") -
-                                                                                                                                           datetime.strptime(trip_stop_data[trip_id][0]['arrival_time'], "%H:%M:%S")).seconds))
+                                                                                                                                           datetime.strptime(trip_stop_data[trip_id][0]['arrival_time'], "%H:%M:%S")).seconds)
 
     def get_shape_pos(trip_id):
         # Get the estimated value
