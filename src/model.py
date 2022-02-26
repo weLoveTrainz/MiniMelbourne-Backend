@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 class Stop(BaseModel):
     name: str = Field(..., description="Station name")
-    station_id: str 
+    station_id: str
     coords: list[float]
 
 
@@ -18,11 +18,11 @@ class TripShape(BaseModel):
 
 
 class TripStop(BaseModel):
-    arrival_time: str 
-    stop_id: str 
+    arrival_time: str
+    stop_id: str
 
 class TripInfo(BaseModel):
-    trip_id: str 
+    trip_id: str
     Trips: list[TripStop] = Field(...,description="List of stations along with their arrival time")
 
 
@@ -36,7 +36,7 @@ class TripInfoDict(BaseModel):
     Trips: dict[int,TripStopDict]
 
 class Occupancy(int, Enum):
-    ''' 
+    '''
     If available, displays how crowded the train is.
     '''
     EMPTY = 0
@@ -48,7 +48,7 @@ class Occupancy(int, Enum):
     NOT_ACCEPTING_PASSENGERS = 6
 
 class Service(BaseModel):
-    ''' 
+    '''
     (GTFS-R) - Details for a running service.
     '''
     service_id: str = Field(
@@ -67,22 +67,26 @@ class RealTimeData(BaseModel):
     '''
     List of all realtime trains with locations.
 
-    ''' 
-    timestamp: int 
+    '''
+    timestamp: int
     services: list[Service]
 
 class StopSequence(BaseModel):
     arrival: int
-    departure: int 
-    sequence_id: int 
+    departure: int
+    sequence_id: int
 
 
 class TripUpdate(BaseModel):
-    trip_id: str 
+    trip_id: str
     start_time: str 
-    start_date: str 
+    start_date: str
     stopping_pattern: list[StopSequence]
 
 class TripUpdates(BaseModel):
-    timestamp: str 
+    timestamp: str
     trips: list[TripUpdate]
+
+class CurrentStop(BaseModel):
+    completed: bool
+    stop: Stop
