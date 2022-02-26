@@ -159,8 +159,12 @@ async def get_current_stop(trip_id: str) -> NextStop:
     }
 
 @app.get("/occupancy/{trip_id}", response_model=Occupancy)
-async def get_current_stop(trip_id: str) -> Occupancy:
+async def get_occupancy(trip_id: str) -> Occupancy:
     return random.randint(0,6)
+
+@app.get("/stop_occupancy/{stop_id}", response_model=CarParkOccupancy)
+async def get_stop_occupanct(stop_id: str) -> CarParkOccupancy:
+    return random.randint(0,100)
 
 @repeat_every(seconds=20)
 async def update_realtime() -> None:
