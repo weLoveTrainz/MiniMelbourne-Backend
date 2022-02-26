@@ -9,6 +9,8 @@ from os import environ
 from dotenv import load_dotenv
 from src.model import *
 from src.gtfs_pb2 import FeedMessage
+from datetime import datetime
+import requests
 
 
 # define API urls
@@ -79,7 +81,6 @@ async def get_realtime() -> RealTimeData:
 
 @app.get("/trip_update", response_model=TripUpdates)
 async def get_trip_update() -> TripUpdates:
-
     return {
         'timestamp': update_data.header.timestamp,
         'trips': [
@@ -89,11 +90,37 @@ async def get_trip_update() -> TripUpdates:
         ]
     }
 
+@app.get("/current_station/{trip_id}", response_model=CurrentStop)
+async def get_current_stop(trip_id: str) -> CurrentStop:
+    trip_info = await get_trip_info_data(trip_id)
+    stops = trip_info["Trips"]
+
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+
+    # We want the last station that the train was at
+    i = 0
+    current_stop = stops[i]
+    while (current_time > current_stop['arrival_time']) and (i < len(stops) - 1):
+        i += 1
+        current_stop = stops[i]
+
+    stop_id = str(current_stop['stop_id'])
+
+    return {
+        'completed': i == len(stops) - 1,
+        'stop': {
+            'name': stop_data[stop_id]['stop_name'],
+            'station_id': stop_id,
+            'coords': [stop_data[stop_id]['stop_lat'], stop_data[stop_id]['stop_lon']]
+        }
+    }
+
 
 @repeat_every(seconds=20)
 async def update_realtime() -> None:
-    ''' 
-    Updates in realtime.    
+    '''
+    Updates in realtime.
     The data stores the timestamp which can be used for updates.
     '''
 
