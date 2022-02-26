@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 from src.model import *
 from src.gtfs_pb2 import FeedMessage
 from datetime import datetime
-import requests
 
 
 # define API urls
@@ -81,6 +80,7 @@ async def get_realtime() -> RealTimeData:
 
 @app.get("/trip_update", response_model=TripUpdates)
 async def get_trip_update() -> TripUpdates:
+
     return {
         'timestamp': update_data.header.timestamp,
         'trips': [
