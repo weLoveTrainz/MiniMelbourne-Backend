@@ -120,3 +120,7 @@ class NextStop(BaseModel):
 
 class CarParkOccupancy(int):
     occupancy: int
+
+class TrainLine(BaseModel):
+    trip_id: str
+    line_name: str
