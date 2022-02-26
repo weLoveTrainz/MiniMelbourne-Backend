@@ -16,7 +16,7 @@ import random
 # define API urls
 GTFS_R = 'https://data-exchange-api.vicroads.vic.gov.au/opendata/v1/gtfsr/metrotrain-vehicleposition-updates'
 GTFS_T = 'https://data-exchange-api.vicroads.vic.gov.au/opendata/v1/gtfsr/metrotrain-tripupdates'
-# Get live data -> digest -> serve -> get live data ....    
+# Get live data -> digest -> serve -> get live data ....
 location_data = FeedMessage()
 update_data = FeedMessage()
 
@@ -30,6 +30,10 @@ print(environ["PrimaryKey"])
 # This file contains the stations
 with open('data/stops.txt', 'r') as file:
     stop_data = {r[0]: {'stop_id': r[0], 'stop_name': r[1], 'stop_lat': r[2], 'stop_lon': r[3]}
+                 for r in list(map(lambda x: x.split(","), file.read().replace('"', '').split("\n")[1:]))[0:-1]}
+
+with open('data/routes.txt', 'r') as file:
+    route_data = {r[0]: {'route_id': r[0], 'route_long_name': r[3]}
                  for r in list(map(lambda x: x.split(","), file.read().replace('"', '').split("\n")[1:]))[0:-1]}
 
 # Contains the trip id along with the station ids and the times it stops at them
@@ -165,6 +169,15 @@ async def get_occupancy(trip_id: str) -> Occupancy:
 @app.get("/stop_occupancy/{stop_id}", response_model=CarParkOccupancy)
 async def get_stop_occupanct(stop_id: str) -> CarParkOccupancy:
     return random.randint(0,100)
+
+@app.get("/train_line/{trip_id}", response_model=TrainLine)
+async def get_train_line(trip_id: str) -> TrainLine:
+    for key in route_data:
+        if key in trip_id:
+            return {
+                'trip_id': trip_id,
+                'line_name': route_data[key]['route_long_name']
+            }
 
 @repeat_every(seconds=20)
 async def update_realtime() -> None:
