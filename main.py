@@ -1,4 +1,5 @@
 import pickle
+from turtle import update
 import aiohttp
 import uvicorn
 from fastapi import FastAPI
@@ -34,7 +35,7 @@ with open('data/stops.txt', 'r') as file:
 
 with open('data/routes.txt', 'r') as file:
     route_data = {r[0]: {'route_id': r[0], 'route_long_name': r[3]}
-                 for r in list(map(lambda x: x.split(","), file.read().replace('"', '').split("\n")[1:]))[0:-1]}
+                  for r in list(map(lambda x: x.split(","), file.read().replace('"', '').split("\n")[1:]))[0:-1]}
 
 # Contains the trip id along with the station ids and the times it stops at them
 with open('data/stop_times.pkl', 'rb') as file:
@@ -48,6 +49,7 @@ with open('data/shapes.pkl', 'rb') as file:
     shape_data = pickle.load(file)
 
 # Endpoints defined below
+
 
 @app.get('/stops', tags=['Station'], response_model=Stops)
 async def get_stops() -> Stops:
@@ -83,9 +85,8 @@ async def get_est_realtime() -> EstRealTime:
     Estimates the locations of services that are active. Gets the start date, and then finds the approximate location of the train.
 
     '''
-    retrieve = await get_trip_update()  # Get current
+    retrieve = await get_trip_update_curr()  # Get current
     trip_data_curr = retrieve['trips']
-    print(f'Length: {len(trip_data_curr)}')
     now = datetime.now()
     current_time = datetime.strptime(now.strftime("%H:%M:%S"), "%H:%M:%S")
     # shapeNum * (curr_time-start_time)/(finish_time-start_time)
@@ -95,9 +96,9 @@ async def get_est_realtime() -> EstRealTime:
         Estimate the position at which the train is
         '''
         shape_id = ".".join(trip_id.split(".")[2:])
-        return floor(len(shape_data[shape_id])*(current_time -
-                                                       datetime.strptime(trip_stop_data[trip_id][0]['arrival_time'], "%H:%M:%S")).seconds/(datetime.strptime(trip_stop_data[trip_id][-1]['arrival_time'], "%H:%M:%S") -
-                                                                                                                                           datetime.strptime(trip_stop_data[trip_id][0]['arrival_time'], "%H:%M:%S")).seconds)
+        return max(0, min(floor(len(shape_data[shape_id])*(current_time -
+                                                           datetime.strptime(trip_stop_data[trip_id][0]['arrival_time'], "%H:%M:%S")).seconds/(datetime.strptime(trip_stop_data[trip_id][-1]['arrival_time'], "%H:%M:%S") -
+                                                                                                                                               datetime.strptime(trip_stop_data[trip_id][0]['arrival_time'], "%H:%M:%S")).seconds), len(shape_data[shape_id])-1))
 
     def get_shape_pos(trip_id):
         # Get the estimated value
@@ -127,7 +128,7 @@ async def get_realtime() -> RealTimeData:
 
 @app.get("/trip_update", response_model=TripUpdates)
 async def get_trip_update() -> TripUpdates:
-
+    print(update_data)
     return {
         'timestamp': update_data.header.timestamp,
         'trips': [
@@ -145,14 +146,14 @@ async def get_trip_update_curr() -> TripUpdates:
     '''
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
-    print(update_data)
 
     return {
         'timestamp': update_data.header.timestamp,
         'trips': [
             {'trip_id': curr.trip_update.trip.trip_id, 'start_time': curr.trip_update.trip.start_time, 'start_date': curr.trip_update.trip.start_date,
              'stopping_pattern': [{"arrival": stop_seq.arrival.time, "departure": stop_seq.departure.time, "sequence_id": stop_seq.stop_sequence} for stop_seq in curr.trip_update.stop_time_update]}
-            for curr in update_data.entity if curr.trip_update.trip.start_time < current_time < trip_stop_data[curr.trip_update.trip.trip_id][-1]['arrival_time']
+            # if curr.trip_update.trip.start_time < current_time < trip_stop_data[curr.trip_update.trip.trip_id][-1]['arrival_time']
+            for curr in update_data.entity
         ]
     }
 
@@ -184,6 +185,7 @@ async def get_current_stop(trip_id: str) -> CurrentStop:
             'coords': [stop_data[stop_id]['stop_lat'], stop_data[stop_id]['stop_lon']]
         }
     }
+
 
 @app.get("/next_station/{trip_id}", response_model=NextStop)
 async def get_current_stop(trip_id: str) -> NextStop:
@@ -218,13 +220,16 @@ async def get_current_stop(trip_id: str) -> NextStop:
         'arrival': current_stop['arrival_time']
     }
 
+
 @app.get("/occupancy/{trip_id}", response_model=Occupancy)
 async def get_occupancy(trip_id: str) -> Occupancy:
-    return random.randint(0,6)
+    return random.randint(0, 6)
+
 
 @app.get("/stop_occupancy/{stop_id}", response_model=CarParkOccupancy)
 async def get_stop_occupanct(stop_id: str) -> CarParkOccupancy:
-    return random.randint(0,100)
+    return random.randint(0, 100)
+
 
 @app.get("/train_line/{trip_id}", response_model=TrainLine)
 async def get_train_line(trip_id: str) -> TrainLine:
@@ -235,13 +240,13 @@ async def get_train_line(trip_id: str) -> TrainLine:
                 'line_name': route_data[key]['route_long_name']
             }
 
+
 @repeat_every(seconds=20)
 async def update_realtime() -> None:
     '''
     Updates in realtime.
     The data stores the timestamp which can be used for updates.
     '''
-    print("Hello")
 
     async with aiohttp.ClientSession() as session:
         async with session.get(GTFS_R, headers={'Ocp-Apim-Subscription-Key': environ['PrimaryKey']}) as response:
@@ -249,8 +254,7 @@ async def update_realtime() -> None:
         async with session.get(GTFS_T, headers={'Ocp-Apim-Subscription-Key': environ['PrimaryKey']}) as response:
             update_data.ParseFromString(await response.read())
 
-    print(location_data)
-    print(update_data)
+
 @app.on_event('startup')
 async def startup() -> None:
     await update_realtime()
