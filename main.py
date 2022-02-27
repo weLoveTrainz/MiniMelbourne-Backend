@@ -27,7 +27,6 @@ app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
 load_dotenv()
-print(environ["PrimaryKey"])
 # This file contains the stations
 with open('data/stops.txt', 'r') as file:
     stop_data = {r[0]: {'stop_id': r[0], 'stop_name': r[1], 'stop_lat': r[2], 'stop_lon': r[3]}
