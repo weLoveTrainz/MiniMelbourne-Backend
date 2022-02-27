@@ -83,8 +83,9 @@ async def get_est_realtime() -> EstRealTime:
     Estimates the locations of services that are active. Gets the start date, and then finds the approximate location of the train.
 
     '''
-    retrieve = await get_trip_update_curr()  # Get current
+    retrieve = await get_trip_update()  # Get current
     trip_data_curr = retrieve['trips']
+    print(f'Length: {len(trip_data_curr)}')
     now = datetime.now()
     current_time = datetime.strptime(now.strftime("%H:%M:%S"), "%H:%M:%S")
     # shapeNum * (curr_time-start_time)/(finish_time-start_time)
