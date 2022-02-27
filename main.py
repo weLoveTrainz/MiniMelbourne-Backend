@@ -252,8 +252,6 @@ async def update_realtime() -> None:
             location_data.ParseFromString(await response.read())
         async with session.get(GTFS_T, headers={'Ocp-Apim-Subscription-Key': environ['PrimaryKey']}) as response:
             new_stream = await response.read()
-            if len(new_stream) < 200:
-                return
             update_data.ParseFromString(new_stream)
 
 
