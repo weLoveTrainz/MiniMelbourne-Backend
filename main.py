@@ -128,7 +128,7 @@ async def get_realtime() -> RealTimeData:
 
 @app.get("/trip_update", response_model=TripUpdates)
 async def get_trip_update() -> TripUpdates:
-    print(update_data)
+    #print(update_data)
     return {
         'timestamp': update_data.header.timestamp,
         'trips': [
