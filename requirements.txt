@@ -1,0 +1,9 @@
+pandas
+aiohttp
+pydantic
+python-dotenv
+uvicorn[all]
+fastapi
+fastapi_utils
+protobuf
+requests
