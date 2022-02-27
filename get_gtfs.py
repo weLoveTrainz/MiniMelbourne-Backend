@@ -11,11 +11,11 @@ import pandas as pd
 import pickle
 
 # Get if it doesn't exist
-if not os.path.isfile('gtfs.zip'):
-    with open('gtfs.zip', 'wb') as file:
-        file.write(
-            requests.get(
-                'http://data.ptv.vic.gov.au/downloads/gtfs.zip', stream=True).content)
+
+with open('gtfs.zip', 'wb') as file:
+    file.write(
+        requests.get(
+            'http://data.ptv.vic.gov.au/downloads/gtfs.zip', stream=True).content)
 
 with ZipFile('gtfs.zip', 'r') as archive:
     # Get only Metro VIC data
