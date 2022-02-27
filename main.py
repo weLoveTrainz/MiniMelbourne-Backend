@@ -251,12 +251,15 @@ async def update_realtime() -> None:
         async with session.get(GTFS_R, headers={'Ocp-Apim-Subscription-Key': environ['PrimaryKey']}) as response:
             location_data.ParseFromString(await response.read())
         async with session.get(GTFS_T, headers={'Ocp-Apim-Subscription-Key': environ['PrimaryKey']}) as response:
-            update_data.ParseFromString(await response.read())
+            new_stream = await response.read()
+            if len(new_stream) < 200:
+                return
+            update_data.ParseFromString(new_stream)
 
 
 @app.on_event('startup')
 async def startup() -> None:
     await update_realtime()
 
-#if __name__ == "__main__":
-#    uvicorn.run(app, host='0.0.0.0', port=8080)
+if __name__ == "__main__":
+    uvicorn.run(app, host='0.0.0.0', port=8080)
