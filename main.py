@@ -144,6 +144,7 @@ async def get_trip_update_curr() -> TripUpdates:
     '''
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
+    print(update_data)
 
     return {
         'timestamp': update_data.header.timestamp,
@@ -239,6 +240,7 @@ async def update_realtime() -> None:
     Updates in realtime.
     The data stores the timestamp which can be used for updates.
     '''
+    print("Hello")
 
     async with aiohttp.ClientSession() as session:
         async with session.get(GTFS_R, headers={'Ocp-Apim-Subscription-Key': environ['PrimaryKey']}) as response:
@@ -246,7 +248,8 @@ async def update_realtime() -> None:
         async with session.get(GTFS_T, headers={'Ocp-Apim-Subscription-Key': environ['PrimaryKey']}) as response:
             update_data.ParseFromString(await response.read())
 
-
+    print(location_data)
+    print(update_data)
 @app.on_event('startup')
 async def startup() -> None:
     await update_realtime()
