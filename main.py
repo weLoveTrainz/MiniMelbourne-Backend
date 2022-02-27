@@ -1,5 +1,4 @@
 import pickle
-from turtle import update
 import aiohttp
 import uvicorn
 from fastapi import FastAPI
