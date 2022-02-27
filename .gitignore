@@ -130,6 +130,6 @@ dmypy.json
 
 # custom 
 *.zip
-/data 
-*.pkl 
+stop_times.txt
+shapes.txt
 *.ipynb 
