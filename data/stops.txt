@@ -195,7 +195,6 @@
 "20025","Footscray Railway Station (Footscray)","-37.8010829790878","144.90319921519"
 "20026","South Kensington Railway Station (Kensington)","-37.7995308742589","144.925469007521"
 "20027","Flemington Racecourse Railway Station (Flemington)","-37.787201923265","144.907588697812"
-"20028","Showgrounds Railway Station (Flemington)","-37.7834721968038","144.914256890322"
 "20030","Broadmeadows Railway Station (Broadmeadows)","-37.6830492642064","144.919613216031"
 "20031","Jacana Railway Station (Glenroy)","-37.69513078513","144.915850518758"
 "20032","Glenroy Railway Station (Glenroy)","-37.7045363302301","144.917220403897"

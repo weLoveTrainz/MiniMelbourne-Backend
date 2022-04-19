@@ -40,6 +40,10 @@ class TripInfoDict(BaseModel):
     trip_id: str
     Trips: dict[int, TripStopDict]
 
+class NextStop(BaseModel):
+    # None if the route is completed so no next stop
+    next_stop: str | None
+    arrival: str | None
 
 class Occupancy(int, Enum):
     '''
@@ -68,6 +72,8 @@ class Service(BaseModel):
     longitude: float
     timestamp: int = Field(..., description='Epoch Timestamp')
     vehicle_id: str
+    next_stop: str | None
+    arrival: str | None 
     occupancy: Occupancy | None
 
 
@@ -113,10 +119,7 @@ class CurrentStop(BaseModel):
     completed: bool
     stop: Stop
 
-class NextStop(BaseModel):
-    # None if the route is completed so no next stop
-    stop: Stop | None
-    arrival: str | None
+
 
 class CarParkOccupancy(int):
     occupancy: int
